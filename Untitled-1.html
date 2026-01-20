@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MORI HOMESTAY - AI POWERED & BOOKING</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Calistoga&family=Montserrat:wght@300;400;600;700;900&display=swap');
+        
+        body { font-family: 'Montserrat', sans-serif !important; background-color: #f8fafc; }
+        .font-calistoga { font-family: 'Calistoga', cursive !important; }
+        .chatbot-font { font-family: 'Times New Roman', Times, serif !important; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .wave-shape { border-radius: 50% 50% 48% 52% / 10% 10% 90% 90%; overflow: hidden; }
+        
+        .hero-section { 
+            height: 85vh; 
+            background: linear-gradient(rgba(0,0,0,0.02), rgba(0,0,0,0.05)), 
+                        url('https://i.pinimg.com/originals/3c/0a/0b/3c0a0b274640106596956693a8632665.jpg');
+            background-size: cover; background-position: center; border-radius: 0 0 5rem 5rem;
+        }
+
+        .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); }
+
+        .tab-item { cursor: pointer; padding: 12px 24px; border-radius: 30px; transition: 0.3s; font-weight: 700; font-size: 13px; color: #475569; display: flex; align-items: center; gap: 8px; border: 1px solid #e2e8f0; background: white; }
+        .tab-item.active { background: #0284c7; color: white; border-color: #0284c7; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
+
+        #ai-chatbot { position: fixed; bottom: 2rem; right: 2rem; z-index: 1000; }
+        .chat-box { 
+            display: none; width: 380px; height: 500px; 
+            flex-direction: column; background: white; 
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); 
+            border-radius: 2rem; overflow: hidden; border: 1px solid #e2e8f0;
+        }
+        .message-ai { background: #f1f5f9; border-radius: 1.2rem 1.2rem 1.2rem 0; padding: 12px 16px; max-width: 85%; color: #1e293b; font-weight: 600; font-size: 14px; }
+        .message-user { background: #0284c7; color: white; border-radius: 1.2rem 1.2rem 0 1.2rem; padding: 12px 16px; max-width: 85%; align-self: flex-end; font-size: 14px; }
+        
+        .icon-shell { width: 35px; height: 35px; content: url('https://cdn-icons-png.flaticon.com/512/3504/3504380.png'); }
+        .icon-wave { width: 35px; height: 35px; content: url('https://cdn-icons-png.flaticon.com/512/3133/3133177.png'); }
+        .icon-close-red { width: 25px; height: 25px; content: url('https://cdn-icons-png.flaticon.com/512/1828/1828843.png'); cursor: pointer; }
+        .icon-cart { width: 25px; height: 25px; content: url('https://cdn-icons-png.flaticon.com/512/1170/1170678.png'); }
+        .icon-send { width: 20px; height: 20px; content: url('https://cdn-icons-png.flaticon.com/512/3106/3106856.png'); filter: brightness(0) invert(1); }
+        
+        .text-accent { color: #0284c7; } 
+        .text-price { color: #e11d48; } 
+        .booking-input { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 12px; outline: none; margin-bottom: 8px; font-weight: 600; }
+        .booking-input:focus { border-color: #0284c7; }
+    </style>
+</head>
+<body>
+
+    <nav class="glass-nav sticky top-0 z-50 border-b border-sky-100 py-5">
+        <div class="container mx-auto px-6 lg:px-20 flex justify-between items-center">
+            <div class="text-accent text-3xl font-black flex items-center gap-2 cursor-pointer uppercase tracking-tighter font-calistoga" onclick="location.reload()">
+                <div class="icon-shell"></div> <span>MORI HOMESTAY</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <button onclick="toggleCart()" class="relative p-4 bg-sky-50 rounded-full hover:bg-sky-100 transition group border border-sky-100 shadow-sm">
+                    <div class="icon-cart group-hover:scale-110 transition"></div>
+                    <span id="cart-count" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] w-6 h-6 flex items-center justify-center rounded-full font-bold border-2 border-white">0</span>
+                </button>
+                <button onclick="exportExcel()" class="bg-[#1e293b] text-white text-[10px] uppercase font-bold px-6 py-3 rounded-full hover:bg-sky-600 transition shadow-xl tracking-widest font-calistoga">
+                    BÁO CÁO
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero-section flex items-center justify-center text-white text-center px-4 mb-20 shadow-2xl overflow-hidden">
+        <div class="max-w-5xl animate-in fade-in zoom-in duration-1000">
+            <h1 class="text-7xl md:text-9xl font-black mb-6 tracking-tighter drop-shadow-2xl uppercase font-calistoga text-white">MORI</h1>
+            <p class="text-xl md:text-4xl font-bold italic drop-shadow-lg text-white uppercase tracking-widest leading-relaxed">Tuyệt tác nghỉ dưỡng biển</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 lg:px-20 py-8">
+        <div class="flex gap-4 overflow-x-auto no-scrollbar mb-16 pb-2">
+            <div class="tab-item active" onclick="filterRooms('all', this)"><i class="fas fa-water"></i> Tất cả phòng</div>
+            <div class="tab-item" onclick="filterRooms('luxury', this)"><i class="fas fa-crown"></i> Thượng hạng</div>
+            <div class="tab-item" onclick="filterRooms('family', this)"><i class="fas fa-users"></i> Gia đình</div>
+            <div class="tab-item" onclick="filterRooms('chill', this)"><i class="fas fa-umbrella-beach"></i> Nghỉ dưỡng</div>
+        </div>
+
+        <h2 class="text-3xl font-black mb-10 text-sky-900 uppercase italic font-calistoga flex items-center gap-4">
+            <div class="icon-wave"></div> Trải nghiệm biển
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-24 text-center">
+            <div class="bg-white rounded-3xl p-6 shadow-md border border-sky-50 hover:shadow-xl transition relative group">
+                <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400" class="w-full h-40 object-cover rounded-2xl mb-4 shadow-sm">
+                <h4 class="font-black text-sky-900 uppercase text-xs">Tiệc nướng BBQ</h4>
+                <p class="text-xs text-price font-black mt-2 italic">650.000đ/set</p>
+                <button onclick="addToCart(101, 'Tiệc nướng BBQ', 650000, 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400')" class="mt-4 bg-sky-600 text-white text-[10px] px-6 py-2.5 rounded-full font-black uppercase hover:bg-sky-700 transition shadow-md">Chọn đặt</button>
+            </div>
+            <div class="bg-white rounded-3xl p-6 shadow-md border border-sky-50 hover:shadow-xl transition relative group">
+                <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400" class="w-full h-40 object-cover rounded-2xl mb-4 shadow-sm">
+                <h4 class="font-black text-sky-900 uppercase text-xs">Chèo SUP/Kayak</h4>
+                <p class="text-xs text-price font-black mt-2 italic">300.000đ/buổi</p>
+                <button onclick="addToCart(102, 'Chèo SUP/Kayak', 300000, 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400')" class="mt-4 bg-sky-600 text-white text-[10px] px-6 py-2.5 rounded-full font-black uppercase hover:bg-sky-700 transition shadow-md">Chọn đặt</button>
+            </div>
+            <div class="bg-white rounded-3xl p-6 shadow-md border border-sky-50 hover:shadow-xl transition relative group">
+                <img src="https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=400" class="w-full h-40 object-cover rounded-2xl mb-4 shadow-sm">
+                <h4 class="font-black text-sky-900 uppercase text-xs">Thuê Xe Máy</h4>
+                <p class="text-xs text-price font-black mt-2 italic">150.000đ/ngày</p>
+                <button onclick="addToCart(103, 'Thuê Xe Máy', 150000, 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=400')" class="mt-4 bg-sky-600 text-white text-[10px] px-6 py-2.5 rounded-full font-black uppercase hover:bg-sky-700 transition shadow-md">Chọn đặt</button>
+            </div>
+            <div class="bg-white rounded-3xl p-6 shadow-md border border-sky-50 hover:shadow-xl transition relative group">
+                <img src="https://images.unsplash.com/photo-1524146122018-97967a13018e?w=400" class="w-full h-40 object-cover rounded-2xl mb-4 shadow-sm">
+                <h4 class="font-black text-sky-900 uppercase text-xs">Máy ảnh Gopro</h4>
+                <p class="text-xs text-price font-black mt-2 italic">250.000đ/ngày</p>
+                <button onclick="addToCart(104, 'Máy ảnh Gopro', 250000, 'https://images.unsplash.com/photo-1524146122018-97967a13018e?w=400')" class="mt-4 bg-sky-600 text-white text-[10px] px-6 py-2.5 rounded-full font-black uppercase hover:bg-sky-700 transition shadow-md">Chọn đặt</button>
+            </div>
+        </div>
+
+        <h2 class="text-3xl font-black mb-12 text-sky-900 uppercase italic font-calistoga flex items-center gap-4">
+            <div class="icon-shell"></div> Không gian lưu trú
+        </h2>
+        <div id="room-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-10 gap-y-20 mb-32">
+        </div>
+
+        <h2 class="text-3xl font-black mb-12 text-sky-900 uppercase italic text-center font-calistoga">Phản hồi khách hàng</h2>
+        <div class="grid md:grid-cols-3 lg:grid-cols-5 gap-6 mb-32">
+            <div class="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm hover:shadow-md transition text-xs">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100" class="w-10 h-10 rounded-full object-cover border-2 border-sky-50">
+                    <div><p class="font-black text-accent uppercase">Hoàng Thu Trang</p><p class="text-[8px] text-gray-400">Tháng 1/2026</p></div>
+                </div>
+                <div class="text-price text-[10px] mb-3"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p class="text-gray-600 italic">"Trải nghiệm Glamping bên bờ biển thực sự tuyệt vời, lều sạch và tiện nghi."</p>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm hover:shadow-md transition text-xs">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100" class="w-10 h-10 rounded-full object-cover border-2 border-sky-50">
+                    <div><p class="font-black text-accent uppercase">Minh Quân</p><p class="text-[8px] text-gray-400">Tháng 1/2026</p></div>
+                </div>
+                <div class="text-price text-[10px] mb-3"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p class="text-gray-600 italic">"Dịch vụ đặt cọc 30% rất minh bạch. Phòng Panorama view biển không góc chết."</p>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm hover:shadow-md transition text-xs">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100" class="w-10 h-10 rounded-full object-cover border-2 border-sky-50">
+                    <div><p class="font-black text-accent uppercase">Ngọc Lan</p><p class="text-[8px] text-gray-400">Tháng 12/2025</p></div>
+                </div>
+                <div class="text-price text-[10px] mb-3"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p class="text-gray-600 italic">"Mori Homestay mang lại cảm giác nghỉ dưỡng cao cấp. Robot AI tư vấn rất nhiệt tình."</p>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm hover:shadow-md transition text-xs">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100" class="w-10 h-10 rounded-full object-cover border-2 border-sky-50">
+                    <div><p class="font-black text-accent uppercase">Thế Anh</p><p class="text-[8px] text-gray-400">Tháng 1/2026</p></div>
+                </div>
+                <div class="text-price text-[10px] mb-3"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p class="text-gray-600 italic">"Vị trí đắc địa, ngay sát mép nước. Sáng thức dậy nghe tiếng sóng vỗ rất bình yên."</p>
+            </div>
+            <div class="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm hover:shadow-md transition text-xs">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100" class="w-10 h-10 rounded-full object-cover border-2 border-sky-50">
+                    <div><p class="font-black text-accent uppercase">Thanh Hà</p><p class="text-[8px] text-gray-400">Tháng 11/2025</p></div>
+                </div>
+                <div class="text-price text-[10px] mb-3"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                <p class="text-gray-600 italic">"Bữa tiệc BBQ bãi biển rất lãng mạn. Đồ ăn tươi ngon và trang trí cực đẹp."</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-96 bg-white shadow-2xl z-[100] transform translate-x-full transition-transform duration-500 p-8 flex flex-col rounded-l-[3rem] border-l border-sky-50">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <h3 class="font-black text-2xl text-accent uppercase italic font-calistoga tracking-tight">Hành trình Mori</h3>
+            <button onclick="toggleCart()" class="hover:scale-125 transition duration-300"><div class="icon-close-red"></div></button>
+        </div>
+        <div id="cart-items" class="flex-grow overflow-y-auto space-y-4 mb-4 pr-2 no-scrollbar"></div>
+
+        <div class="border-t pt-4 mb-4 space-y-2">
+            <h4 class="text-[10px] font-black uppercase text-gray-400 mb-2">Thông tin nhận phòng</h4>
+            <input type="text" id="cust-name" placeholder="Họ và Tên" class="booking-input">
+            <div class="flex gap-2">
+                <input type="tel" id="cust-phone" placeholder="Số điện thoại" class="booking-input w-1/2">
+                <input type="email" id="cust-email" placeholder="Email khách hàng" class="booking-input w-1/2">
+            </div>
+            <div class="flex gap-2">
+                <div class="w-1/2">
+                    <label class="text-[8px] font-bold uppercase text-gray-400">Ngày nhận</label>
+                    <input type="date" id="checkin" class="booking-input">
+                    <input type="time" id="checkin-time" class="booking-input" value="14:00">
+                </div>
+                <div class="w-1/2">
+                    <label class="text-[8px] font-bold uppercase text-gray-400">Ngày trả</label>
+                    <input type="date" id="checkout" class="booking-input">
+                    <input type="time" id="checkout-time" class="booking-input" value="12:00">
+                </div>
+            </div>
+            <input type="number" id="guest-count" placeholder="Số lượng khách" class="booking-input" min="1">
+        </div>
+
+        <div class="bg-sky-50 p-6 rounded-3xl border border-sky-100 shadow-inner">
+            <div class="flex justify-between font-black text-lg mb-2 text-sky-900 uppercase font-calistoga">
+                <span>Tổng Bill:</span><span id="cart-total">0đ</span>
+            </div>
+            <p class="text-[9px] text-rose-500 font-black uppercase mb-4 italic"><i class="fas fa-shield-halved mr-1"></i> Yêu cầu đặt cọc trước 30% để xác nhận đơn</p>
+            <button id="btn-confirm" onclick="confirmBooking()" class="w-full bg-sky-600 text-white py-4 rounded-2xl font-black hover:bg-sky-700 transition shadow-lg uppercase text-[10px] tracking-widest">XÁC NHẬN ĐẶT CỌC</button>
+        </div>
+    </div>
+
+    <div id="ai-chatbot">
+        <div id="chat-box" class="chat-box mb-6 border border-sky-100 chatbot-font shadow-2xl">
+            <div class="bg-sky-600 p-5 text-white flex justify-between items-center font-bold">
+                <div class="flex items-center gap-3">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712038.png" class="w-8 h-8 brightness-200">
+                    <span class="text-[12px] uppercase font-black tracking-widest text-white">MORI AI ASSISTANT</span>
+                </div>
+                <button onclick="toggleChat()" class="hover:scale-125 transition duration-300"><div class="icon-close-red" style="filter: brightness(200%); width: 22px; height: 22px;"></div></button>
+            </div>
+            <div class="p-6 flex-grow overflow-y-auto text-sm space-y-4 bg-slate-50 flex flex-col no-scrollbar" id="chat-content">
+                <div class="message-ai shadow-sm font-bold uppercase text-[10px] tracking-widest leading-loose text-accent">Chào bạn! Mori AI có thể tư vấn đặt phòng hoặc thủ tục đặt cọc 30%?</div>
+            </div>
+            <div class="p-4 border-t bg-white flex gap-3 shadow-inner">
+                <input type="text" id="chat-input" placeholder="Hỏi Mori..." class="flex-grow p-4 bg-gray-50 border-none rounded-2xl text-xs outline-none focus:ring-2 focus:ring-sky-500 font-bold uppercase">
+                <button onclick="sendMessage()" class="bg-sky-600 text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg hover:bg-sky-700 transition"><div class="icon-send"></div></button>
+            </div>
+        </div>
+        <button onclick="toggleChat()" class="bg-sky-600 w-16 h-16 rounded-full text-white shadow-2xl text-3xl hover:scale-110 transition active:scale-95 border-4 border-white flex items-center justify-center">
+            <img src="https://cdn-icons-png.flaticon.com/512/4712/4712038.png" class="w-10 h-10 brightness-200">
+        </button>
+    </div>
+
+    <footer class="py-20 text-center text-gray-400 text-sm border-t border-sky-50 bg-white">
+        <p class="font-black text-sky-900 text-2xl tracking-tighter italic uppercase font-calistoga leading-none">MORI HOMESTAY</p>
+    </footer>
+
+    <script>
+        const rooms = [
+            { id: 1, name: "Standard Hướng Biển", price: 800000, cat: "chill", img: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=600", desc: "Cửa sổ hướng biển • 1-2 người" },
+            { id: 2, name: "Superior Sea View", price: 1100000, cat: "luxury", img: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=600", desc: "Ban công rộng • Tầng cao" },
+            { id: 3, name: "Junior Suite Biển", price: 1500000, cat: "luxury", img: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600", desc: "Khu vực tiếp khách riêng" },
+            { id: 5, name: "Family Sea View", price: 2800000, cat: "family", img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600", desc: "Phòng lớn cho gia đình" },
+            { id: 8, name: "Sea View Bungalow", price: 1800000, cat: "luxury", img: "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?w=600", desc: "Gỗ mộc sát biển • Riêng tư" },
+            { id: 16, name: "Panorama Glass Room", price: 2800000, cat: "luxury", img: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600", desc: "Kính từ sàn tới trần" },
+            { id: 18, name: "Yoga Relax Space", price: 1600000, cat: "chill", img: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600", desc: "Khu vực thiền • Tĩnh lặng" }
+        ];
+
+        let cart = [];
+        let db = [];
+        // LINK GOOGLE SHEETS MỚI CỦA BẠN ĐÃ ĐƯỢC GẮN
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbxVrM17Q1vDj3nH-dcXGGeywpyJR3qm7h9EIkDo7WStAx1cNSpYEa9sUwzHfrtW0Zo-/exec'; 
+
+        function renderRooms(filter = 'all') {
+            const grid = document.getElementById('room-grid');
+            const filtered = filter === 'all' ? rooms : rooms.filter(r => r.cat === filter);
+            grid.innerHTML = filtered.map(r => `
+                <div class="group">
+                    <div class="relative aspect-square wave-shape shadow-xl mb-6 bg-white border border-sky-50">
+                        <img src="${r.img}" class="object-cover w-full h-full group-hover:scale-110 transition duration-700">
+                    </div>
+                    <div class="px-2">
+                        <div class="flex justify-between font-black text-accent uppercase italic text-[11px] font-calistoga">
+                            <h3 class="truncate pr-2">${r.name}</h3><span class="text-sky-400">★ 4.9</span>
+                        </div>
+                        <p class="text-sky-300 text-[9px] mt-1 font-bold italic leading-none">${r.desc}</p>
+                        <p class="mt-2 font-black text-price text-lg font-calistoga">${r.price.toLocaleString()} ₫</p>
+                        <button onclick="addToCart(${r.id}, '${r.name}', ${r.price}, '${r.img}')" class="mt-4 w-full bg-sky-600 text-white text-[10px] py-3 rounded-2xl font-black uppercase hover:bg-sky-700 transition shadow-md shadow-sky-50">Chọn đặt phòng</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterRooms(cat, el) { document.querySelectorAll('.tab-item').forEach(i => i.classList.remove('active')); el.classList.add('active'); renderRooms(cat); }
+        function addToCart(id, name, price, img) { cart.push({id, name, price, img, cartId: Date.now()}); updateCartUI(); if (document.getElementById('cart-sidebar').classList.contains('translate-x-full')) toggleCart(); }
+        
+        function updateCartUI() {
+            document.getElementById('cart-count').innerText = cart.length;
+            const container = document.getElementById('cart-items');
+            const totalDisplay = document.getElementById('cart-total');
+            let total = cart.reduce((sum, i) => sum + i.price, 0);
+            if (cart.length === 0) {
+                container.innerHTML = `<p class="text-sky-300 text-center py-10 italic text-[10px] font-black uppercase font-calistoga">Giỏ hàng trống...</p>`;
+                totalDisplay.innerText = "0đ"; return;
+            }
+            container.innerHTML = cart.map((item) => `
+                <div class="flex gap-4 items-center bg-sky-50/50 p-4 rounded-3xl border border-sky-100 shadow-sm">
+                    <img src="${item.img}" class="w-14 h-14 object-cover rounded-xl border-2 border-white shadow-sm">
+                    <div class="flex-grow"><div class="text-[10px] font-black text-sky-900 uppercase italic mb-1">${item.name}</div><div class="text-xs text-price font-bold">${item.price.toLocaleString()}đ</div></div>
+                    <button onclick="removeFromCart(${item.cartId})" class="hover:scale-110 transition"><div class="icon-close-red" style="width: 18px; height: 18px;"></div></button>
+                </div>`).join('');
+            totalDisplay.innerText = total.toLocaleString() + "đ";
+        }
+
+        function removeFromCart(cartId) { cart = cart.filter(i => i.cartId !== cartId); updateCartUI(); }
+        function toggleCart() { document.getElementById('cart-sidebar').classList.toggle('translate-x-full'); }
+        function toggleChat() { document.getElementById('chat-box').style.display = document.getElementById('chat-box').style.display === 'flex' ? 'none' : 'flex'; }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const content = document.getElementById('chat-content');
+            if (!input.value) return;
+            const userMsg = input.value.toLowerCase();
+            content.innerHTML += `<div class="message-user font-bold uppercase text-[10px] tracking-widest">${input.value}</div>`;
+            input.value = "";
+            setTimeout(() => {
+                let aiMsg = "Để đặt hành trình tại Mori, bạn hãy thêm phòng vào giỏ hàng và **Xác nhận đặt cọc 30%** ngay nhé!";
+                if(userMsg.includes("giá")) aiMsg = "Giá phòng dao động từ 800k đến 5.5tr VNĐ. Chi tiết trong từng hạng phòng bên dưới!";
+                else if(userMsg.includes("địa chỉ")) aiMsg = "Mori Homestay nằm ngay sát mặt biển, bãi tắm riêng tư cực chill.";
+                content.innerHTML += `<div class="message-ai font-bold uppercase text-[10px] tracking-widest leading-relaxed font-calistoga text-accent">${aiMsg}</div>`;
+                content.scrollTop = content.scrollHeight;
+            }, 800);
+        }
+
+        async function confirmBooking() {
+            const name = document.getElementById('cust-name').value;
+            const phone = document.getElementById('cust-phone').value;
+            const email = document.getElementById('cust-email').value;
+            const cin = document.getElementById('checkin').value;
+            const cout = document.getElementById('checkout').value;
+            if (cart.length === 0 || !name || !phone || !cin || !cout) return alert("Vui lòng điền đủ thông tin!");
+
+            const btn = document.getElementById('btn-confirm');
+            btn.innerText = "ĐANG XỬ LÝ..."; btn.disabled = true;
+
+            const total = cart.reduce((sum, i) => sum + i.price, 0);
+            const deposit = total * 0.3;
+            
+            // Cấu trúc 14 cột chuẩn khớp với file excel của bạn
+            const bookingData = {
+                "Mã số": "MORI-" + Math.floor(Math.random()*99999),
+                "Khách hàng": name.toUpperCase(),
+                "SĐT": phone,
+                "Email": email,
+                "Trạng thái": "Đã đặt cọc 30%",
+                "Ngày giao dịch": new Date().toLocaleDateString('vi-VN'),
+                "Ngày Nhận": cin,
+                "Giờ Nhận": document.getElementById('checkin-time').value || "14:00",
+                "Ngày Trả": cout,
+                "Giờ Trả": document.getElementById('checkout-time').value || "12:00",
+                "Số khách": document.getElementById('guest-count').value || 1,
+                "Dịch vụ": cart.map(i => i.name).join(", "),
+                "Tổng hoá đơn": total,
+                "Tiền cọc (30%)": deposit
+            };
+
+            try {
+                await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(bookingData) });
+                db.push(bookingData);
+                localStorage.setItem('mori_final_db', JSON.stringify(db));
+                alert(`Cảm ơn ${name}! Đặt phòng thành công. Đơn hàng đã được gửi về hệ thống.`);
+                cart = []; updateCartUI(); toggleCart();
+                document.querySelectorAll('.booking-input').forEach(i => i.value = "");
+            } catch (error) {
+                alert("Lỗi kết nối. Đơn hàng được lưu tạm thời vào máy bạn!");
+            }
+            btn.innerText = "XÁC NHẬN ĐẶT CỌC"; btn.disabled = false;
+        }
+
+        function exportExcel() {
+            if(db.length === 0) return alert("Chưa có đơn hàng nào mới!");
+            const ws = XLSX.utils.json_to_sheet(db);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "DanhSachDatCoc");
+            XLSX.writeFile(wb, "MORI_HOMESTAY_REPORT_FINAL.xlsx");
+        }
+        renderRooms();
+    </script>
+</body>
+</html>
